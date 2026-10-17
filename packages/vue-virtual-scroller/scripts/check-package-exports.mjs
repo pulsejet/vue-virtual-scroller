@@ -11,19 +11,19 @@ const distEntryPath = path.join(packageDir, 'dist/vue-virtual-scroller.js')
 const smokeCases = [
   {
     name: 'plugin-default',
-    source: `import VueVirtualScroller from 'vue-virtual-scroller'
+    source: `import VueVirtualScroller from '@radialapps/vue-virtual-scroller'
 export default VueVirtualScroller
 `,
   },
   {
     name: 'composable-recycle',
-    source: `import { useRecycleScroller } from 'vue-virtual-scroller/composables/useRecycleScroller'
+    source: `import { useRecycleScroller } from '@radialapps/vue-virtual-scroller/composables/useRecycleScroller'
 export { useRecycleScroller }
 `,
   },
   {
     name: 'component-recycle',
-    source: `import RecycleScroller from 'vue-virtual-scroller/components/RecycleScroller'
+    source: `import RecycleScroller from '@radialapps/vue-virtual-scroller/components/RecycleScroller'
 export default RecycleScroller
 `,
   },
@@ -45,8 +45,8 @@ function createTempConsumerRoot() {
   const tempRoot = mkdtempSync(path.join(tmpdir(), 'vue-virtual-scroller-package-'))
   const nodeModulesDir = path.join(tempRoot, 'node_modules')
 
-  mkdirSync(nodeModulesDir, { recursive: true })
-  symlinkSync(packageDir, path.join(nodeModulesDir, 'vue-virtual-scroller'), 'dir')
+  mkdirSync(path.join(nodeModulesDir, '@radialapps'), { recursive: true })
+  symlinkSync(packageDir, path.join(nodeModulesDir, '@radialapps', 'vue-virtual-scroller'), 'dir')
 
   return tempRoot
 }

@@ -1,20 +1,20 @@
 {
-  "name": "vue-virtual-scroller",
+  "name": "@radialapps/vue-virtual-scroller",
   "type": "module",
-  "version": "3.0.5",
+  "version": "3.0.5-5",
   "description": "Smooth scrolling for any amount of data",
   "author": {
     "name": "Guillaume Chau",
     "email": "guillaume.b.chau@gmail.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/Akryum/vue-virtual-scroller#readme",
+  "homepage": "https://github.com/pulsejet/vue-virtual-scroller#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Akryum/vue-virtual-scroller.git"
+    "url": "git+https://github.com/pulsejet/vue-virtual-scroller.git"
   },
   "bugs": {
-    "url": "https://github.com/Akryum/vue-virtual-scroller/issues"
+    "url": "https://github.com/pulsejet/vue-virtual-scroller/issues"
   },
   "keywords": [
     "vue",

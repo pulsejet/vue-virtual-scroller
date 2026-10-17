@@ -341,22 +341,20 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     const fixedItemSize = getFixedItemSize(opts.itemSize)
     if (fixedItemSize === null) {
       const currentItems = items.value
-      const sizes = Array.from({ length: currentItems.length }) as unknown as Sizes
+      // eslint-disable-next-line unicorn/no-new-array
+      const sizes = new Array<SizeEntry>(currentItems.length)
       _variableSizeBaseEntry.accumulator = 0
       sizes[-1] = _variableSizeBaseEntry
       const minItemSize = opts.minItemSize as number
-      const restoredSizes = _restoredSizes.value
-      const isSimpleArray = simpleArray.value
       let computedMinSize = 10000
       let accumulator = 0
       let current: number
       for (let i = 0, l = currentItems.length; i < l; i++) {
-        const key = isSimpleArray ? i : resolveItemKey(currentItems[i], i, opts.keyField)
         current = resolveVariableItemSize(
           currentItems[i],
           i,
           opts.itemSize,
-          restoredSizes[key],
+          undefined,
           minItemSize,
           opts.sizeField,
         )

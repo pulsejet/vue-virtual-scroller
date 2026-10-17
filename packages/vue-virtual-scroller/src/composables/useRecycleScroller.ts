@@ -618,6 +618,10 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     for (let i = 0, l = pool.value.length; i < l; i++) {
       const view = pool.value[i]
       if (view) {
+        if ((view.item as { virtualSticky?: boolean } | null)?.virtualSticky) {
+          _views.set(view.nr.key, view)
+          continue
+        }
         removeAndRecycleView(view)
       }
     }
@@ -1481,7 +1485,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
           // recycling on it would force step 2 to immediately re-claim the
           // slot, and any per-tick gap visible to the browser shows up as
           // a blank row. See issue #906.
-          if (!viewVisible) {
+          if (!viewVisible && !(view.item as { virtualSticky?: boolean } | null)?.virtualSticky) {
             removeAndRecycleView(view, keepFlowModeOrderIncrementally)
           }
         }

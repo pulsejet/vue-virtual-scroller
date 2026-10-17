@@ -79,6 +79,7 @@ const EMPTY_SIZES: never[] = []
  * Touch array slots so computed wrappers react to shallow list mutations such as
  * push, splice, reorder, or item replacement without deep-watching item fields.
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 function trackArrayShallowMutations<TItem>(items: TItem[]) {
   for (let index = 0; index < items.length; index++) {
     // eslint-disable-next-line ts/no-unused-expressions
@@ -238,7 +239,6 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
   const normalizedInputs = normalizeScrollerInputs(resolvedOptions, el, before, after, callbacks)
   const items = computed(() => {
     const currentItems = toValue(getOptions().items)
-    trackArrayShallowMutations(currentItems)
     return currentItems
   })
 

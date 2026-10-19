@@ -63,7 +63,7 @@ export interface UseDynamicScrollerOptions<TItem = unknown> extends ScrollerOpti
   onResize?: () => void
   onVisible?: () => void
   onHidden?: () => void
-  onUpdate?: (startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number) => void
+  onUpdate?: (startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number, scrollTop: number, wrapperHeight: number) => void
 }
 
 type UseDynamicScrollerRecycleReturn<TItem, TKey> = UseRecycleScrollerReturn<ItemWithSize<TItem, TKey>, TKey>
@@ -784,8 +784,8 @@ export function useDynamicScroller<TOptions extends UseDynamicScrollerOptions<an
     getOptions().onHidden?.()
   }
 
-  function onScrollerUpdate(startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number) {
-    getOptions().onUpdate?.(startIndex, endIndex, visibleStartIndex, visibleEndIndex)
+  function onScrollerUpdate(startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number, scrollTop: number, wrapperHeight: number) {
+    getOptions().onUpdate?.(startIndex, endIndex, visibleStartIndex, visibleEndIndex, scrollTop, wrapperHeight)
   }
 
   const recycleOptions = reactive({

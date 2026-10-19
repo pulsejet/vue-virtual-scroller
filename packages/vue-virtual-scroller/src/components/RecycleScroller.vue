@@ -77,7 +77,7 @@ const emit = defineEmits<{
   resize: []
   visible: []
   hidden: []
-  update: [startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number]
+  update: [startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number, scrollTop: number, wrapperHeight: number]
   scrollStart: []
   scrollEnd: []
 }>()
@@ -136,8 +136,8 @@ const recycleScrollerOptions = computed(() => ({
   onResize: () => emit('resize'),
   onVisible: () => emit('visible'),
   onHidden: () => emit('hidden'),
-  onUpdate: (startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number) => {
-    emit('update', startIndex, endIndex, visibleStartIndex, visibleEndIndex)
+  onUpdate: (startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number, scrollTop: number, wrapperHeight: number) => {
+    emit('update', startIndex, endIndex, visibleStartIndex, visibleEndIndex, scrollTop, wrapperHeight)
     if (visibleStartIndex <= 0) {
       emit('scrollStart')
     }

@@ -275,6 +275,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
   let _scrollDirty = false
   let _lastUpdateScrollPosition = 0
   let _lastUpdateSecondaryScrollPosition = 0
+  let _lastWrapperHeight = 0
   let _prerender = false
   let _updateTimeout: ReturnType<typeof setTimeout> | null = null
   let _refreshTimout: ReturnType<typeof setTimeout> | null = null
@@ -1215,6 +1216,8 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     let startIndex: number, endIndex: number
     let totalSizeValue: number
     let visibleStartIndex: number, visibleEndIndex: number
+    let scrollTopForEmit: number
+    let wrapperHeightForEmit: number
 
     // In variable-size mode the size cache is computed from `items`. When items
     // change, the cache may be transiently sparse for one update tick (the size
@@ -1246,11 +1249,18 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
         visibleEndIndex = Math.min(_lastGoodRange.visibleEndIndex, count)
         totalSizeValue = sizesValue[count - 1]?.accumulator ?? _lastGoodRange.totalSizeValue
       }
+      // Fresh position: shrinking to empty can clamp scrollTop.
+      const rawScroll = getScroll()
+      _lastUpdateScrollPosition = rawScroll.start
+      scrollTopForEmit = rawScroll.start
+      wrapperHeightForEmit = totalSizeValue
     }
     else if (_prerender) {
       startIndex = visibleStartIndex = 0
       endIndex = visibleEndIndex = Math.min(opts.prerender, currentItems.length)
       totalSizeValue = 0
+      scrollTopForEmit = _lastUpdateScrollPosition
+      wrapperHeightForEmit = totalSizeValue
     }
     else {
       const rawScroll = getScroll()
@@ -1279,6 +1289,8 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
           && secondaryPositionDiff >= itemSecondarySize
 
         if (!primaryThresholdMet && !secondaryThresholdMet) {
+          if (opts.emitUpdate)
+            normalizedInputs.callbacks.onUpdate?.(_startIndex, _endIndex, _visibleStartIndex, _visibleEndIndex, rawScroll.start, _lastWrapperHeight)
           return {
             continuous: true,
           }
@@ -1286,6 +1298,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
       }
       _lastUpdateScrollPosition = rawScroll.start
       _lastUpdateSecondaryScrollPosition = rawSecondaryScroll.start
+      scrollTopForEmit = rawScroll.start
 
       const buffer = opts.buffer
       scroll.start -= buffer
@@ -1440,6 +1453,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
           totalSizeValue = Math.ceil(count / gridItems) * itemSize
         }
       }
+      wrapperHeightForEmit = totalSizeValue
     }
 
     const itemsLimit = typeof opts.itemsLimit === 'number' && opts.itemsLimit > 0
@@ -1594,8 +1608,9 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     _visibleStartIndex = visibleStartIndex
     _visibleEndIndex = visibleEndIndex
     _hasWindowState = true
+    _lastWrapperHeight = wrapperHeightForEmit
     if (opts.emitUpdate)
-      normalizedInputs.callbacks.onUpdate?.(startIndex, endIndex, visibleStartIndex, visibleEndIndex)
+      normalizedInputs.callbacks.onUpdate?.(startIndex, endIndex, visibleStartIndex, visibleEndIndex, scrollTopForEmit, wrapperHeightForEmit)
 
     // After the user has finished scrolling
     // Sort views so text selection is correct

@@ -8,7 +8,7 @@ export interface ScrollerCallbacks {
   onResize?: () => void
   onVisible?: () => void
   onHidden?: () => void
-  onUpdate?: (startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number) => void
+  onUpdate?: (startIndex: number, endIndex: number, visibleStartIndex: number, visibleEndIndex: number, scrollTop: number, wrapperHeight: number) => void
 }
 
 /**
@@ -104,8 +104,8 @@ export function normalizeScrollerInputs<TOptions extends ScrollerOptionElements 
       onResize: () => (callbacks?.onResize ?? resolvedOptions.value.onResize)?.(),
       onVisible: () => (callbacks?.onVisible ?? resolvedOptions.value.onVisible)?.(),
       onHidden: () => (callbacks?.onHidden ?? resolvedOptions.value.onHidden)?.(),
-      onUpdate: (startIndex, endIndex, visibleStartIndex, visibleEndIndex) =>
-        (callbacks?.onUpdate ?? resolvedOptions.value.onUpdate)?.(startIndex, endIndex, visibleStartIndex, visibleEndIndex),
+      onUpdate: (startIndex, endIndex, visibleStartIndex, visibleEndIndex, scrollTop, wrapperHeight) =>
+        (callbacks?.onUpdate ?? resolvedOptions.value.onUpdate)?.(startIndex, endIndex, visibleStartIndex, visibleEndIndex, scrollTop, wrapperHeight),
     },
   }
 }

@@ -836,7 +836,7 @@ describe('useRecycleScroller', () => {
     onUpdate.mockClear()
     vm.updateVisibleItems(false)
 
-    expect(onUpdate).toHaveBeenCalledWith(...baselineRange)
+    expect(onUpdate.mock.lastCall!.slice(0, 4)).toEqual(baselineRange)
     expect(vm.pool
       .filter((view: View) => view.nr.used)
       .map((view: View) => view.nr.index))

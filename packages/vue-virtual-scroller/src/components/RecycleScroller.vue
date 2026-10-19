@@ -38,6 +38,8 @@ const props = withDefaults(defineProps<{
   disableTransform?: boolean
   flowMode?: boolean
   hiddenPosition?: number
+  /** Virtual space reserved before the first item, in pixels. */
+  startOffset?: number
   updateInterval?: number
   itemsLimit?: number
   skipHover?: boolean
@@ -65,6 +67,7 @@ const props = withDefaults(defineProps<{
   disableTransform: false,
   flowMode: false,
   hiddenPosition: undefined,
+  startOffset: 0,
   updateInterval: 0,
   itemsLimit: undefined,
   skipHover: false,
@@ -130,6 +133,7 @@ const recycleScrollerOptions = computed(() => ({
   disableTransform: props.disableTransform,
   flowMode: props.flowMode,
   hiddenPosition: props.hiddenPosition,
+  startOffset: props.startOffset,
   updateInterval: props.updateInterval,
   itemsLimit: props.itemsLimit,
   enabled: props.enabled,

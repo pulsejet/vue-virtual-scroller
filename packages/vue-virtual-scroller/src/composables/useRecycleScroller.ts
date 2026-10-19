@@ -35,6 +35,8 @@ export interface UseRecycleScrollerOptions<TItem = unknown, TSizeField extends s
    * Park recycled hidden views at custom main-axis position.
    */
   hiddenPosition?: number
+  /** Virtual space reserved before the first item, in pixels. */
+  startOffset?: number
   updateInterval: number
   /**
    * Maximum views this scroller may render before reporting a missing scroll boundary.
@@ -342,13 +344,14 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     const fixedItemSize = getFixedItemSize(opts.itemSize)
     if (fixedItemSize === null) {
       const currentItems = items.value
+      const startOffset = opts.startOffset ?? 0
       // eslint-disable-next-line unicorn/no-new-array
       const sizes = new Array<SizeEntry>(currentItems.length)
-      _variableSizeBaseEntry.accumulator = 0
+      _variableSizeBaseEntry.accumulator = startOffset
       sizes[-1] = _variableSizeBaseEntry
       const minItemSize = opts.minItemSize as number
       let computedMinSize = 10000
-      let accumulator = 0
+      let accumulator = startOffset
       let current: number
       for (let i = 0, l = currentItems.length; i < l; i++) {
         current = resolveVariableItemSize(
@@ -908,12 +911,13 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     const opts = getOptions()
     const gridItems = opts.gridItems || 1
     const fixedItemSize = getFixedItemSize(opts.itemSize)
+    const startOffset = opts.startOffset ?? 0
     if (index <= 0) {
-      return 0
+      return startOffset
     }
 
     if (fixedItemSize !== null) {
-      return Math.floor(index / gridItems) * fixedItemSize
+      return startOffset + Math.floor(index / gridItems) * fixedItemSize
     }
 
     return ((sizes.value as Sizes)[index - 1]?.accumulator) || 0
@@ -924,13 +928,14 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     const count = items.value.length
     const gridItems = opts.gridItems || 1
     const fixedItemSize = getFixedItemSize(opts.itemSize)
+    const startOffset = opts.startOffset ?? 0
 
     if (!count) {
       return 0
     }
 
     if (fixedItemSize !== null) {
-      const index = Math.floor(offset / fixedItemSize) * gridItems
+      const index = Math.floor((offset - startOffset) / fixedItemSize) * gridItems
       return Math.min(Math.max(index, 0), count - 1)
     }
 
@@ -1200,6 +1205,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
       return { continuous: true }
     }
     const opts = getOptions()
+    const startOffset = opts.startOffset ?? 0
     const itemSize = getFixedItemSize(opts.itemSize)
     const gridItems = opts.gridItems || 1
     const itemSecondarySize = opts.itemSecondarySize || itemSize || 0
@@ -1237,7 +1243,8 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
 
     if (!count || !isVariableSizeCacheReady) {
       if (!count || !_lastGoodRange) {
-        startIndex = endIndex = visibleStartIndex = visibleEndIndex = totalSizeValue = 0
+        startIndex = endIndex = visibleStartIndex = visibleEndIndex = 0
+        totalSizeValue = startOffset
       }
       else {
         // Clamp the saved indices to current `count` so a wholesale shrink
@@ -1258,7 +1265,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     else if (_prerender) {
       startIndex = visibleStartIndex = 0
       endIndex = visibleEndIndex = Math.min(opts.prerender, currentItems.length)
-      totalSizeValue = 0
+      totalSizeValue = startOffset
       scrollTopForEmit = _lastUpdateScrollPosition
       wrapperHeightForEmit = totalSizeValue
     }
@@ -1310,6 +1317,13 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
       const beforeSize = getLeadingSlotSize()
       scroll.start -= beforeSize
       scroll.end -= beforeSize
+
+      // Shift fixed-size windows into item-relative coords; variable-size
+      // accumulators already include the offset.
+      if (itemSize !== null) {
+        scroll.start -= startOffset
+        scroll.end -= startOffset
+      }
 
       // account for trailing slot
       const afterEl = normalizedInputs.after.value
@@ -1430,7 +1444,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
           endIndex = gridWindow.endIndex
           visibleStartIndex = gridWindow.visibleStartIndex
           visibleEndIndex = gridWindow.visibleEndIndex
-          totalSizeValue = gridWindow.totalSize
+          totalSizeValue = gridWindow.totalSize + startOffset
         }
         else {
           startIndex = ~~(scroll.start / itemSize * gridItems)
@@ -1443,18 +1457,27 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
           // Bounds
           if (startIndex < 0)
             startIndex = 0
+          if (endIndex < 0)
+            endIndex = 0
           if (endIndex > count)
             endIndex = count
           if (visibleStartIndex < 0)
             visibleStartIndex = 0
+          if (visibleEndIndex < 0)
+            visibleEndIndex = 0
           if (visibleEndIndex > count)
             visibleEndIndex = count
 
-          totalSizeValue = Math.ceil(count / gridItems) * itemSize
+          totalSizeValue = startOffset + Math.ceil(count / gridItems) * itemSize
         }
       }
       wrapperHeightForEmit = totalSizeValue
     }
+
+    // Negative offsets shift items above the viewport; wrapper and spacer
+    // sizes must stay valid CSS lengths.
+    totalSizeValue = Math.max(0, totalSizeValue)
+    wrapperHeightForEmit = totalSizeValue
 
     const itemsLimit = typeof opts.itemsLimit === 'number' && opts.itemsLimit > 0
       ? opts.itemsLimit
@@ -1573,7 +1596,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
         view.offset = 0
       }
       else {
-        view.position = Math.floor(i / gridItems) * itemSize
+        view.position = startOffset + Math.floor(i / gridItems) * itemSize
         view.offset = (i % gridItems) * itemSecondarySize
       }
 
@@ -1591,7 +1614,7 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
         endSpacerSize.value = totalSizeValue
       }
       else {
-        startSpacerSize.value = firstVisiblePosition
+        startSpacerSize.value = Math.max(0, firstVisiblePosition)
         endSpacerSize.value = Math.max(0, totalSizeValue - firstVisiblePosition - renderedVisibleSize)
       }
       if (!keepFlowModeOrderIncrementally) {
@@ -1957,6 +1980,13 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
   })
 
   watch(() => getOptions().itemSecondarySize, () => {
+    if (!isEnabled.value) {
+      return
+    }
+    updateVisibleItems(true)
+  })
+
+  watch(() => getOptions().startOffset, () => {
     if (!isEnabled.value) {
       return
     }

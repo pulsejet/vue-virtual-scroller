@@ -577,6 +577,31 @@ describe('useRecycleScroller', () => {
     expect(vm.visiblePool.every((view: View) => view.nr.type === 'detail')).toBe(true)
   })
 
+  it('keeps visiblePool ordered and reuses views when retained rows shift index', async () => {
+    const { vm, options } = mountHarness({
+      items: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+      itemSize: 10,
+      clientHeight: 40,
+    })
+
+    await nextTick()
+    await nextTick()
+
+    const idsByKey = new Map(vm.visiblePool.map((view: View) => [view.nr.key, view.nr.id]))
+    expect(vm.visiblePool.map((view: View) => view.nr.key)).toEqual(['a', 'b', 'c'])
+
+    // In-place reversal like Timeline's row splices: same keys, new indices.
+    options.items.reverse()
+    vm.updateVisibleItems(true)
+    await nextTick()
+
+    expect(vm.visiblePool.map((view: View) => view.nr.key)).toEqual(['c', 'b', 'a'])
+    expect(vm.visiblePool.map((view: View) => view.nr.index)).toEqual([0, 1, 2])
+    for (const view of vm.visiblePool) {
+      expect(view.nr.id).toBe(idsByKey.get(view.nr.key))
+    }
+  })
+
   it('supports function keyField for cache snapshots and shift anchoring', async () => {
     const keyField = (item: { threadId: string, id: number }) => `${item.threadId}:${item.id}`
     const { vm, options } = mountHarness({

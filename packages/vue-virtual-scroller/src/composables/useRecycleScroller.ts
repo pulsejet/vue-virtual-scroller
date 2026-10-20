@@ -631,6 +631,56 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     }
   }
 
+  /**
+   * Key-preserving alternative to `removeAndRecycleAllViews` for structural
+   * item changes while the render window stays continuous. View ownership
+   * follows stable keys rather than indices, so rows that merely shifted keep
+   * their pooled view (style-only update via `touchView`): only vanished-key
+   * and out-of-window views are recycled, and genuinely new keys are claimed
+   * from the recycled pool by step 2 as usual. Key snapshots are
+   * intentionally left alone, so a later identity swap still diffs against
+   * them and falls back to the full path.
+   */
+  function retainViewsByRenderedKeys(
+    startIndex: number,
+    endIndex: number,
+    renderedIndices: number[] | null,
+    keyField: KeyFieldValue<TItem> | null,
+    typeField: string,
+    currentItems: TItem[],
+  ) {
+    const renderedKeyIndex = new Map<ItemKey<TItem, TKeyField>, { index: number, type: unknown }>()
+    forEachRenderedIndex(startIndex, endIndex, renderedIndices, (index) => {
+      const item = currentItems[index]
+      if (item === undefined) {
+        return
+      }
+      const key = (keyField ? resolveItemKey(item, index, keyField) : index) as ItemKey<TItem, TKeyField>
+      if (!renderedKeyIndex.has(key)) {
+        renderedKeyIndex.set(key, { index, type: (item as any)[typeField] })
+      }
+    })
+
+    const poolValue = pool.value
+    for (let poolIndex = 0, length = poolValue.length; poolIndex < length; poolIndex++) {
+      const view = poolValue[poolIndex]
+      if (!view || !view.nr.used) {
+        continue
+      }
+      if ((view.item as { virtualSticky?: boolean } | null)?.virtualSticky) {
+        continue
+      }
+      const next = renderedKeyIndex.get(view.nr.key)
+      if (next === undefined || view.nr.type !== next.type) {
+        removeAndRecycleView(view)
+      }
+      else if (view.nr.index !== next.index) {
+        view.nr.index = next.index
+        touchViewVisibility(view)
+      }
+    }
+  }
+
   function requestFrame(cb: () => void): number {
     let frameId = -1
     frameId = requestAnimationFrame(() => {
@@ -1499,7 +1549,13 @@ export function useRecycleScroller<TOptions extends UseRecycleScrollerOptions<an
     let flowModeOrderContext: FlowModeOrderContext | null = null
 
     // Step 1: Mark any invisible elements as unused
-    if (!continuous || itemsChanged) {
+    if (!continuous) {
+      removeAndRecycleAllViews()
+    }
+    else if (itemsChanged && !opts.shift) {
+      retainViewsByRenderedKeys(startIndex, endIndex, renderedIndices, keyField, typeField, currentItems)
+    }
+    else if (itemsChanged) {
       removeAndRecycleAllViews()
     }
     else {
